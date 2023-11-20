@@ -18,6 +18,7 @@ These drafts (will be improved eventually) can also help you understand:
 
 ## Note
 **This project is still under development**
+
 **TODO:**
 - Get visual graph of portfolios (Er, sd)
 - Find the efficient frontier function
