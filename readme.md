@@ -17,4 +17,9 @@ These drafts (will be improved eventually) can also help you understand:
 2. **Time Tracking**: You can measure the performance of functions within the program using the TagHeuer module. This will help with reducing time complexity of expensive operations. 
 
 ## Note
-This project is still under development. 
+**This project is still under development**
+**TODO:**
+- Get visual graph of portfolios (Er, sd)
+- Find the efficient frontier function
+- Implement threads for createRandomPortfolios()
+- Might need a full GUI for ease of use of the program
