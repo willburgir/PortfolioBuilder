@@ -18,7 +18,7 @@ These drafts (will be improved eventually) can also help you understand:
 2. **Time Tracking**: You can measure the performance of functions within the program using the TagHeuer module. This will help with reducing time complexity of expensive operations. 
 
 ## Note
-**This project is still under development**
+**This project is under development**
 
 **TODO:**
 - TimeTracker report should show total metrics
