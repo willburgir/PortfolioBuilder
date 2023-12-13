@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from xlwings import view
 
 
 class AssetClass:
@@ -152,4 +153,20 @@ class Portfolio:
         return f"Portfolio = [{self.name}, composition = {self.reprComposition()},\nE(r) = {self.Er}\nsd   = {self.sd}]"
 
 
+def convert_portfolios_into_df(portfolios: list) -> pd.DataFrame:
+    """
+    Input:  A list of Portfolio objects
+    Output: A pandas dataframe with tuples (name, Er, sd, reference_to_object)
+    """
+    # NOTE: "tuple" is used in the database meaning here, not the Python meaning 
+    tuples = []
+    labels = ["Name", "E(r)", "sd", "Portfolio Object"]
+
+    for p in portfolios:
+        portfolio_as_tuple = [p.name, p.Er, p.sd, p]
+        tuples.append(portfolio_as_tuple)
+
+    df = pd.DataFrame(tuples, columns=labels)
+    
+    return df
 

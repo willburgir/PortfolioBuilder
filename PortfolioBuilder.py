@@ -1,5 +1,6 @@
 import PortfolioBuilderObjects as obj
 import TagHeuer
+import DataVis
 import sys
 import itertools
 import time
@@ -7,9 +8,10 @@ import statistics
 import random
 import numpy as np
 import pandas as pd
+import plotly.express as px
 
 # Number of portfolios generated 
-SAMPLE_SIZE = 1_000
+SAMPLE_SIZE = 1_000_000
 
 # csv dialect
 DELIMITER = ";"
@@ -22,10 +24,10 @@ TIME_FLAG_STR  = "--time"
 # Input arguments indexes
 ASSET_RETURNS = 0
 FILE_TYPE     = 1
-TIME_FLAG     = 2 
+TIME_FLAG     = 2
 
 
-def getArgs() -> list:
+def get_args() -> list:
     """
     Obtains the input from the command line including:
     - Path to csv file containing historical returns of asset classes
@@ -79,7 +81,7 @@ def getArgs() -> list:
     return [file_path, file_type, t_flag]
 
 
-def readAssetReturns(file_path : str, file_type : str):
+def read_asset_returns(file_path : str, file_type : str):
     """
     Reads the input excel or csv containing asset returns per asset class
 
@@ -120,7 +122,21 @@ def readAssetReturns(file_path : str, file_type : str):
     return asset_class_list, corr_matrix
 
 
-def createRandomPortfolios(asset_classes : list, corr_matrix : object, sample_size : int) -> list:
+def get_random_weights(n):
+    """
+    Creates a list of n random weights which sum up to 1
+    """
+    weights = []
+    
+    for i in range(n):
+        weights.append(random.random())
+    
+    # Scale to 1
+    weights = weights/np.sum(weights)*100
+    return weights
+
+
+def create_portfolios(asset_classes : list, corr_matrix : object, sample_size : int) -> list:
     """
     Creates all possible portfolios based on different weighing 
     of asset classes in increments of 1% 
@@ -134,7 +150,7 @@ def createRandomPortfolios(asset_classes : list, corr_matrix : object, sample_si
     n = len(asset_classes)
     
     if n == 0:
-        print("ERROR : Passed an empty list to createRandomPortfolios")
+        print("ERROR : Passed an empty list to create_portfolios")
         exit(1)
 
     portfolios = []
@@ -144,17 +160,7 @@ def createRandomPortfolios(asset_classes : list, corr_matrix : object, sample_si
         # pick n ints, one for each asset class
         # TODO
         # check random distribution 
-        random_weights = []
-        for i in asset_classes:
-            random_number = random.randint(0, BIG_NUMBER)
-            random_weights.append(random_number) 
-
-        # turn into weights out of 100%
-        total = sum(random_weights)
-
-        for i in range(n):
-            here = random_weights[i] 
-            random_weights[i] = here/total * 100
+        random_weights = get_random_weights(n)
 
         # combine into {AssetClass : weight}
         composition = {}
@@ -171,13 +177,22 @@ def createRandomPortfolios(asset_classes : list, corr_matrix : object, sample_si
     return portfolios
 
 
-def create_Er_sd_graph(portfolios : list, filename = "EfficientFrontier") -> None:
+def get_scatter_plot(df: pd.DataFrame, title = "Scatter Plot"):
     """
-    Creates a graph plotting portfolios with:
+    Given a pandas DataFrame of portfolios, creates a graph plotting them with:
     x-axis : E(r)
     y-axis : sd
+
+    Returns the figure object (type from Plotly Express)
     """
-    return
+    labels = {
+        "sd" : "Standard Deviation",
+        "E(r)" : "Expected Return"
+    }
+    figure = px.scatter(df, x="sd", y="E(r)", title=title, labels=labels)
+
+    return figure
+
 
 def main():
     # Prepare TimeTracker
@@ -186,7 +201,7 @@ def main():
     func_name = "Read command line arguments"
     tt.start(func_name)
     # Get command line arguments
-    user_input = getArgs()
+    user_input = get_args()
     returns_file  = user_input[ASSET_RETURNS]
     file_type = user_input[FILE_TYPE]
     time_flag = user_input[TIME_FLAG]
@@ -195,13 +210,24 @@ def main():
     func_name = "Read input data"
     tt.start(func_name)
     # Create AssetClass objects from .csv file
-    asset_classes, corr_matrix = readAssetReturns(returns_file, file_type)
+    asset_classes, corr_matrix = read_asset_returns(returns_file, file_type)
     tt.end(func_name)
 
-    func_name = "createPortfolios"
+    func_name = "create_portfolios"
     tt.start(func_name)
     # Generate portfolios
-    portfolios = createRandomPortfolios(asset_classes, corr_matrix, SAMPLE_SIZE)
+    portfolios = create_portfolios(asset_classes, corr_matrix, SAMPLE_SIZE)
+    tt.end(func_name)
+
+    func_name = "portfolios_df_conversion"
+    tt.start(func_name)
+    portfolios_df = obj.convert_portfolios_into_df(portfolios)
+    tt.end(func_name)
+
+    func_name = "get_scatter_plot"
+    tt.start(func_name)
+    eff_frontier = get_scatter_plot(portfolios_df, title=f"Efficient Frontier : {SAMPLE_SIZE} portfolios")
+    eff_frontier.show()
     tt.end(func_name)
 
     
