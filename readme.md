@@ -1,5 +1,6 @@
 # Portfolio Builder
 ![396285156_293743566860622_1321961359243836737_n](https://github.com/willburgir/PortfolioBuilder/assets/68487952/3f7fa114-0c28-47e1-82a7-a9de5ea9a9ea)
+<img width="1204" alt="first_efficient_frontier" src="https://github.com/willburgir/PortfolioBuilder/assets/68487952/611b8f85-049e-4865-8892-e99e98a7a55c">
 
 This Python program helps you construct an optimal investment portfolio based on historical returns of different asset classes. It uses portfolio optimization techniques to maximize expected returns while minimizing "risk" (standard deviation of returns).
 
