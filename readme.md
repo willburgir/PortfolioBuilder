@@ -21,7 +21,9 @@ These drafts (will be improved eventually) can also help you understand:
 **This project is still under development**
 
 **TODO:**
-- Get visual graph of portfolios (Er, sd)
-- Find the efficient frontier function
-- Implement threads for createRandomPortfolios()
-- Might need a full GUI for ease of use of the program
+- TimeTracker report should show total metrics
+- Somehow show the Efficient Frontier curve
+- Add to graph: (a) risk free rate (b) line tangent to Eff Front. (c) Optimal portfolio
+- Highlight the S&P500 on the scatter plot  
+- Let users highlight any portfolio on the curve (from input)
+- Replace sample input by real values, maybe with yfinance
