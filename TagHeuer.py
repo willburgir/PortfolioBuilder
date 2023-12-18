@@ -12,7 +12,7 @@
 This module takes inspiration from the iconic Tag Heuer Formula 1 Mario Kart
 [https://www.tagheuer.com/us/en/timepieces/collections/tag-heuer-formula-1/44-mm-calibre-16-automatic/CAZ201E.FC6517.html]
 
-The Tag Heuer Time Module is vital to achieve peek performance within other programs. 
+The Tag Heuer Time Module is helpful to measure performance within other programs. 
 It helps us reduce our functions' time complexity and maximize computation efficiency.
 Time is precious. Always create software with this in mind. 
 
@@ -89,6 +89,8 @@ class TimeTracker:
         print(f"| {name_header:^30} | {weight_header:^9} | {runtime_header:^20} |")
         print(mid_sep_line)
 
+
+        # print elements
         runtimes.sort(reverse = True)
         for tup in runtimes:
             # get and format name
@@ -105,6 +107,12 @@ class TimeTracker:
             weight = int(round(weight, 0))
             # print row
             print(f"| {name:<30} |  {weight:^9} | {runtime:20} |")
+        
+        # print total row
+        total_header = "TOTAL"
+        total = int(round(total, 0))
+        print(mid_sep_line)
+        print(f"| {total_header:>30} | {100:^10} | {total:>20} |")
         print(sep_line)
 
 

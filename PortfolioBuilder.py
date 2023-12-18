@@ -1,6 +1,9 @@
+# Project modules
 import PortfolioBuilderObjects as obj
 import TagHeuer
-import DataVis
+import Graphs as gr
+
+# Other modules
 import sys
 import itertools
 import time
@@ -9,6 +12,11 @@ import random
 import numpy as np
 import pandas as pd
 import plotly.express as px
+
+"""
+GitHub Link:
+https://github.com/willburgir/PortfolioBuilder
+"""
 
 # Number of portfolios generated 
 SAMPLE_SIZE = 1_000_000
@@ -177,24 +185,32 @@ def create_portfolios(asset_classes : list, corr_matrix : object, sample_size : 
     return portfolios
 
 
-def get_scatter_plot(df: pd.DataFrame, title = "Scatter Plot"):
+def compute_sharpe(df: pd.DataFrame, rf: float) -> pd.DataFrame:
     """
-    Given a pandas DataFrame of portfolios, creates a graph plotting them with:
-    x-axis : E(r)
-    y-axis : sd
+    Input: 
+        - df : pandas DataFrame containing portfolios
+        - rf : Risk free rate in %
 
-    Returns the figure object (type from Plotly Express)
+    Returns a df with additional column "Sharpe Ratio"
+
+    Requirement:
+    The df passed into this function must have columns named exactly 
+    "E(r)" and "sd"
     """
-    labels = {
-        "sd" : "Standard Deviation",
-        "E(r)" : "Expected Return"
-    }
-    figure = px.scatter(df, x="sd", y="E(r)", title=title, labels=labels)
+    ER = "E(r)"
+    SD = "sd"
 
-    return figure
+    df["Sharpe"] = np.maximum(0, (df[ER] - rf) / df[SD])
+    return df
+
 
 
 def main():
+    # TODO
+    # get this from user
+    risk_free_rate = 2
+
+
     # Prepare TimeTracker
     tt = TagHeuer.TimeTracker()
 
@@ -224,16 +240,19 @@ def main():
     portfolios_df = obj.convert_portfolios_into_df(portfolios)
     tt.end(func_name)
 
+    func_name = "compute_sharpe"
+    tt.start(func_name)
+    portfolios_df = compute_sharpe(portfolios_df, risk_free_rate)
+    tt.end(func_name)
+
     func_name = "get_scatter_plot"
     tt.start(func_name)
-    eff_frontier = get_scatter_plot(portfolios_df, title=f"Efficient Frontier : {SAMPLE_SIZE} portfolios")
+    eff_frontier = gr.get_scatter_plot(portfolios_df, title=f"Efficient Frontier : {SAMPLE_SIZE} portfolios")
+    eff_frontier = gr.add_CAL(eff_frontier, portfolios_df, risk_free_rate)
     eff_frontier.show()
     tt.end(func_name)
 
-    
-    print(f"Number of generated portfolios : {len(portfolios)}")
-    if len(portfolios) >= 1:
-        print(f"{portfolios[0]}")
+
     
     
 
