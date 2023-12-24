@@ -15,7 +15,7 @@ These drafts (will be improved eventually) can also help you understand:
 
 1. **TickerLootLlama**:
    
-   Helps users gather historical returns using ticker sumbols (with automated API calls through yfinance)
+   Helps users gather historical returns using ticker symbols (with automated API calls through yfinance)
 
 2. **TagHeuer**:
    
