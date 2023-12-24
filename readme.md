@@ -43,3 +43,6 @@ These drafts (will be improved eventually) can also help you understand:
 - Extend Capital Allocation Line beyond 100% into optimal portfolio (for investors with leverage)
 - Output a PDF report
 - Provide better, more complete explanations of the theory on this page
+- Given a desired standard deviation, show users the required percentage of their holdings must be composed of:
+    1. The optimal portfolio
+    2. Risk free assets (AAA government bonds)
