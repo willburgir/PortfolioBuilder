@@ -1,3 +1,4 @@
+import PortfolioBuilderObjects as obj
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -21,9 +22,13 @@ def get_scatter_plot(df: pd.DataFrame, title = "Scatter Plot"):
     return figure
 
 
-def add_CAL(figure, df, rf):
+def add_CAL(figure, df, rf) -> obj.Portfolio:
     """
     Plots the Capital Allocation Line onto the scatter plot provided into the figure parameter
+
+    Returns:
+    1. The updated figure (scatter plot) object
+    2. The optimal portfolio as a Portfolio object
     """
     SHARPE = "Sharpe"
     P_OBJ  = "Portfolio Object"
@@ -43,9 +48,7 @@ def add_CAL(figure, df, rf):
     figure.add_trace(cal)
 
 
-    return figure
-
-
+    return figure, optimal_portfolio
 
 
 def save_fig_as_html(fig, file_path) -> None:

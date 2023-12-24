@@ -2,6 +2,77 @@ import numpy as np
 import pandas as pd
 from xlwings import view
 
+DAYS_IN_YEAR   = 365
+WEEKS_IN_YEAR  = 52
+MONTHS_IN_YEAR = 12
+YEARS_IN_YEAR  = 1
+
+def get_num_periods_in_year(period: str) -> float:
+    """
+    Takes in a period as str, returns m: the number of periods in a year 
+    """
+    daily   = ["d", "daily", "day"]
+    weekly  = ["w", "weekly", "week"]
+    monthly = ["m", "monthly", "month"]
+    yearly  = ["y", "yearly", "year", "annual"]
+
+    m = None
+    period = period.lower()
+
+    if period in yearly:
+        m = YEARS_IN_YEAR
+    elif period in monthly:
+        m = MONTHS_IN_YEAR
+    elif period in weekly:
+        m = WEEKS_IN_YEAR
+    elif period in daily:
+        m = DAYS_IN_YEAR
+    else:
+        print("ERROR: Provided invalid period to period_to_annual_rate()")
+        print("Select from [daily, weekly, monthly, yearly]")
+        exit(1)
+    return m
+
+
+def period_to_annual_rate(PR: float, period: str):
+    """
+    Converts a daily rate into annual using:
+    AR = ((PR + 1)**m - 1) * 100
+
+    Where
+    AR: Annual rate in % form
+    PR: Period rate in decimal form
+    m: number of periods per year
+
+    period:
+    daily   -> ["d", "daily", "day"]
+    weekly  -> ["w", "weekly", "week"]
+    monthly -> ["m", "monthly, "month"]
+    yearly  -> ["y", "yearly", "year", "annual"]
+
+    Assumes DR is given in decimal form, not %
+
+    Formula Source:
+    https://www.fool.com/investing/how-to-invest/stocks/how-to-convert-daily-returns-to-annual-returns/#:~:text=The%20same%20equation%20can%20be,365%20%E2%80%93%201)%20x%20100.
+    """ 
+    m = get_num_periods_in_year(period)
+
+    return ((PR + 1)**m - 1) * 100
+
+
+def period_to_annual_sd(sd: float, period: str) -> float:
+    """
+    Turn period standard deviation into annual sd using square root of time rule
+
+    NOTE
+    I am coding this in the airplane without wifi... 
+    If I remember correctly, the formula goes like:
+        sd_annual = sd_period * sqrt(m)
+    """
+    m = get_num_periods_in_year(period)
+
+    return sd * m**0.5
+
 
 class AssetClass:
     """
@@ -10,19 +81,21 @@ class AssetClass:
     standard deviation as a measure of risk (>0)
     """
     name = None 
-    historical_returns = {}
+    historical_returns = None
+    period = None
     Er = None # E(r) Expected Return 
     sd = None # Standard deviation 
 
-    def __init__(self, name : str, historical_returns : dict):
+    def __init__(self, name : str, historical_returns : pd.core.series.Series, period: str):
         # type validation
-        if not isinstance(historical_returns, dict):
-            raise ValueError("Historical returns should be provided as a dictionary.")
+        if not isinstance(historical_returns, pd.core.series.Series):
+            raise ValueError("Historical returns should be provided as a Pandas Series.")
         
         self.name = name
         self.historical_returns = historical_returns
-        self.Er = self.getExpReturn(historical_returns)
-        self.sd = self.getSD(historical_returns)
+        self.period = period
+        self.Er = self.getPandasExpReturn()
+        self.sd = self.getPandasSD()
 
 
     def getName(self):
@@ -36,6 +109,9 @@ class AssetClass:
     def getExpReturn(self, historical_returns : dict):
         """
         Finds the arithmetic mean returns from historical_returns
+
+        NOTE 
+        Deprecated, now using getPandasExpReturn 
         """
         nan_counter = 0
         sum = 0
@@ -55,9 +131,21 @@ class AssetClass:
         return mean
 
 
+    def getPandasExpReturn(self):
+        """
+        Finds the arithmetic mean returns from historical_returns
+        """
+        daily_mean = self.historical_returns.mean()
+        annual_mean = period_to_annual_rate(daily_mean/100, self.period)
+        return annual_mean
+
+
     def getSD(self, historical_returns : dict):
         """
         Finds the standard deviation given historical returns
+
+        NOTE 
+        Deprecated, now using getPandasSD 
         """
         nan_counter = 0
         sd = None
@@ -76,6 +164,13 @@ class AssetClass:
         return sd
 
 
+    def getPandasSD(self):
+        """
+        Finds the standard deviation given historical returns
+        """ 
+        return period_to_annual_sd(self.historical_returns.std(), self.period)
+
+
     def __str__(self):
         return f"AssetClass = [{self.name}, E(r) = {(self.Er)*100:.2f}%, sd = {self.sd:.2f}]"
 
@@ -84,12 +179,17 @@ class Portfolio:
     """
     Portfolios of financial products. 
     Can hold risk free assets, other portfolios or asset classes. 
+
+    TODO
+    OPTIMIZE USING PANDAS !!!!!!
     """
     name = None 
+    color = None
     composition = {}
     corr_matrix = None # Correlation between asset classes' returns (Pandas DataFrame)
     Er = None # E(r) Expected Return 
     sd = None # standard deviation
+
 
     def __init__(self, name : str, composition : dict, corr_matrix : object):
         self.name = name
@@ -98,6 +198,9 @@ class Portfolio:
         self.Er = self.computeEr()
         self.sd = self.computeSd()
 
+
+    def set_color(self, color):
+        self.color = color
 
     def computeEr(self):
         """
@@ -114,6 +217,13 @@ class Portfolio:
             Er_i = a.getEr()
             Er_p += w_i * Er_i
         return Er_p
+
+
+    def computePandasEr():
+            """
+            Hmm... TODO
+            """
+            return
 
 
     def computeSd(self):
@@ -138,13 +248,22 @@ class Portfolio:
         return sd
 
 
+    def computePandasSd():
+        """
+        Hmm... TODO
+        """
+        return
+
+
     def reprComposition(self):
         """
         Returns a visual representation of the composition dict
         """
         string = "{\n"
         for asset_class, w in self.composition.items():
-            string += f"    {w:.0f}% : {asset_class},\n"
+            w = round(w, 2)
+            w_str = f"{w:.2f}"
+            string += f"    {w_str:>6}% : {asset_class},\n"
         string += "}"
         return string 
     
@@ -169,4 +288,3 @@ def convert_portfolios_into_df(portfolios: list) -> pd.DataFrame:
     df = pd.DataFrame(tuples, columns=labels)
     
     return df
-

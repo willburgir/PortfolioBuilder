@@ -19,7 +19,7 @@ https://github.com/willburgir/PortfolioBuilder
 """
 
 # Number of portfolios generated 
-SAMPLE_SIZE = 1_000_000
+SAMPLE_SIZE = 1_000
 
 # csv dialect
 DELIMITER = ";"
@@ -89,45 +89,129 @@ def get_args() -> list:
     return [file_path, file_type, t_flag]
 
 
-def read_asset_returns(file_path : str, file_type : str):
+def translate_period(period: str) -> str:
     """
-    Reads the input excel or csv containing asset returns per asset class
-
-    Returns a list of AssetClass objects and a correlation matrix
+    Takes in the period string provided by the user and translates it to the format 
+    required by pandas resample()
     """
-    asset_class_list = []
+    daily   = ["d", "daily", "day"]
+    weekly  = ["w", "weekly", "week"]
+    monthly = ["m", "monthly", "month"]
+    yearly  = ["y", "yearly", "year", "annual"]
 
-    if file_type not in ["csv", "excel"]:
-        print("ERROR : Invalid file type. Please use Excel or csv")
+    period = period.lower()
+    if period in yearly:
+        p = "Y"
+    elif period in monthly:
+        p = "M"
+    elif period in weekly:
+        p = "W"
+    elif period in daily:
+        p = "D"
+    else:
+        print("ERROR: Provided invalid period to translate_period()")
+        print("Select from [daily, weekly, monthly, yearly]")
+        exit(1)
+    
+    return p
+
+
+def read_excel_parameters(file_path: str, sheet_name: str):
+    """
+    Obtains parameters from excel sheet:
+    1. Risk free rate
+    2. Available borrowing interest rate
+    3. Periodocity of historical returns
+    """
+    # Params indices
+    NAME = 0
+    VAL  = 1
+    SRC  = 2
+    
+    try:
+        df = pd.read_excel(file_path, sheet_name=sheet_name, header=0, index_col=0)
+    except PermissionError:
+        print("ERROR : Could not read Excel file.\nThis could be because the file is open. Please close it before running the program.")
         exit(1)
 
-    if file_type == "csv":
-        # df stands for data frame
-        df = pd.read_csv(file_path, delimiter=DELIMITER, header=0, index_col=0)
-        df = df.T
+    params = []
+    for tp in df.itertuples():
+        param_name = tp[0]
+        param_val = tp[1]
+        param_src = tp[2]
+        params.append((param_name, param_val, param_src))
 
-    elif file_type == "excel":
-        try:
-            df = pd.read_excel(file_path, header=0, index_col=0)
-            df = df.T
-        except PermissionError:
-            print("ERROR : Could not read Excel file.\nThis could be because the file is open. Please close it before running the program.")
-            exit(1)
+    risk_free_rate = params[0][VAL]
+    available_rate = params[1][VAL]
+    periodicity    = params[2][VAL]
 
+    return risk_free_rate, available_rate,  periodicity
+
+
+def read_excel_user_portfolios(file_path: str, sheet_name: str) -> list:
+    """
+    Returns a list of user defined Portfolio objects from the input Excel file
+    """
+    user_portfolios = []
+
+    return user_portfolios
+
+
+def read_excel_input(file_path : str, file_type : str):
+    """
+    Reads the input excel containing:
+    1. Asset Classes historical returns
+    2. Rates (risk free & available borrowing interest rate)
+    3. Portfolios with compositions
+
+    Returns:
+    1. List of AssetClass objects
+    2. Correlation matrix
+    3. Risk free rate
+    4. Available borrowing interest rate
+    5. Periodicity of historical returns
+    6. List of User Portfolio objects to be highlighted 
+    """
+    DATE_DF_LABEL = "Date"
+    ASSET_CLASSES_SHEET = "Asset Classes"
+    PARAMETERS_SHEET    = "Parameters"
+    PORTFOLIOS_SHEET    = "Portfolios"
+
+    #arguments 
+    file_type = "excel"
+    file_path = "input/input.xlsx"
+
+    asset_class_list = []
+
+    if file_type != "excel":
+        print("ERROR : Invalid file type. Please use Excel")
+        exit(1)
+
+    try:
+        rf, available_rate, period = read_excel_parameters(file_path, PARAMETERS_SHEET)
+        df = pd.read_excel(file_path, sheet_name="Asset Classes", header=0, index_col=0)
+    except PermissionError:
+        print("ERROR : Could not read Excel file.\nThis could be because the file is open. Please close it before running the program.")
+        exit(1)
+
+    resample_period = translate_period(period)
+
+    # Assuming 'Date' is the column with datetime values
+    df = df.resample(resample_period).apply(lambda x: (1 + x).prod() - 1)
+    df = df.T
+    
     # create list of AssetClass objects for each row in the df
-    for key, val in df.items():
-
-        name = key
-        returns_dict = {}
-        for period, returns in val.items():
-            returns_dict[period] = returns
-        asset_class = obj.AssetClass(name=name, historical_returns=returns_dict)
+    for tp in df.itertuples():
+        name = tp[0]
+        row  = pd.Series(tp[1:])
+        asset_class = obj.AssetClass(name=name, historical_returns=row, period=period)
         asset_class_list.append(asset_class)
 
     # Get corr_matrix
-    corr_matrix = df.corr()
+    corr_matrix = df.T.corr()
+    corr_matrix
 
-    return asset_class_list, corr_matrix
+    return asset_class_list, corr_matrix, rf, available_rate, period, None
 
 
 def get_random_weights(n):
@@ -206,11 +290,6 @@ def compute_sharpe(df: pd.DataFrame, rf: float) -> pd.DataFrame:
 
 
 def main():
-    # TODO
-    # get this from user
-    risk_free_rate = 2
-
-
     # Prepare TimeTracker
     tt = TagHeuer.TimeTracker()
 
@@ -226,7 +305,7 @@ def main():
     func_name = "Read input data"
     tt.start(func_name)
     # Create AssetClass objects from .csv file
-    asset_classes, corr_matrix = read_asset_returns(returns_file, file_type)
+    asset_classes, corr_matrix, risk_free_rate, available_rate, period, user_portfolios = read_excel_input(returns_file, file_type)
     tt.end(func_name)
 
     func_name = "create_portfolios"
@@ -247,11 +326,13 @@ def main():
 
     func_name = "get_scatter_plot"
     tt.start(func_name)
-    eff_frontier = gr.get_scatter_plot(portfolios_df, title=f"Efficient Frontier : {SAMPLE_SIZE} portfolios")
-    eff_frontier = gr.add_CAL(eff_frontier, portfolios_df, risk_free_rate)
+    eff_frontier = gr.get_scatter_plot(portfolios_df, title=f"Efficient Frontier based on {period.lower()} returns : {SAMPLE_SIZE} portfolios")
+    eff_frontier, optimal_portfolio = gr.add_CAL(eff_frontier, portfolios_df, risk_free_rate)
     eff_frontier.show()
     tt.end(func_name)
 
+    print("\n~~~ Optimal Portfolio (with given asset classes) ~~~\n")
+    print(optimal_portfolio)
 
     
     
