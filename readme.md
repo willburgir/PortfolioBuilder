@@ -21,11 +21,8 @@ These drafts (will be improved eventually) can also help you understand:
 ## Note
 **This project is under development**
 
-**TODO:**
-- Somehow show the Efficient Frontier curve
-- Highlight the S&P500 on the scatter plot  
+**TODO:** 
 - Let users highlight any portfolio on the curve (from input)
-- Replace sample input by real data, maybe with yfinance
-- Let users input risk free rate and borrowing interest rate
-- Extend Capital Allocation Line beyond 100% into optimal portfolio
+- Extend Capital Allocation Line beyond 100% into optimal portfolio (for investors with leverage)
+- Output a PDF report
 - Provide better, more complete explanations of the theory on this page
