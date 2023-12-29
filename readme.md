@@ -46,3 +46,5 @@ These drafts (will be improved eventually) can also help you understand:
 - Given a desired standard deviation, show users the required percentage of their holdings must be composed of:
     1. The optimal portfolio
     2. Risk free assets (AAA government bonds)
+- Implement the option to use target downside deviation to measure risk
+- Show historical returns distribution (skewness graph)
