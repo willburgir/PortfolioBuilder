@@ -17,7 +17,7 @@ def get_scatter_plot(df: pd.DataFrame, title = "Scatter Plot"):
         "sd" : "Standard Deviation",
         "E(r)" : "Expected Return"
     }
-    figure = px.scatter(df, x="sd", y="E(r)", title=title, labels=labels,  color_discrete_sequence=["grey"])
+    figure = px.scatter(df, x="sd", y="E(r)", title=title, labels=labels,  color_discrete_sequence=["grey"], opacity=0.5)
     figure.update_layout({'plot_bgcolor': "white"})
     return figure
 
@@ -49,6 +49,17 @@ def add_CAL(figure, df, rf) -> obj.Portfolio:
 
 
     return figure, optimal_portfolio
+
+
+def add_user_portfolios(figure, portfolios):
+    """
+    Plots the user portfolios on the Scatter plot figure
+    Returns the updated figure
+    """
+    for p in portfolios:
+        figure.add_trace(go.Scatter(x = [p.sd], y = [p.Er], mode = 'markers', name = p.name, marker = dict(size=[25], color = p.color)))
+
+    return figure
 
 
 def save_fig_as_html(fig, file_path) -> None:

@@ -1,6 +1,6 @@
 # Project modules
 import PortfolioBuilderObjects as obj
-import TagHeuer
+import TimeTracker
 import Graphs as gr
 
 # Other modules
@@ -19,15 +19,17 @@ https://github.com/willburgir/PortfolioBuilder
 """
 
 # Number of portfolios generated 
-SAMPLE_SIZE = 1_000
+SAMPLE_SIZE = 1_000_000
 
 # csv dialect
 DELIMITER = ";"
 
 # String resources
-CMD_FORMAT     = "Please follow this format:\npython3 PortfolioBuilder.py [path to csv file].csv [optional flags]"
+BAD_INPUT_SRT  = "ERROR : Inavlid input"
+CMD_FORMAT     = "Please follow this format:\n\npython3 PortfolioBuilder.py [path to Excel file].xlsx [optional flags]\n"
 CMD_FLAGS      = "Available flags:\n--time : Shows the time tracker report." 
 TIME_FLAG_STR  = "--time"
+
 
 # Input arguments indexes
 ASSET_RETURNS = 0
@@ -56,7 +58,7 @@ def get_args() -> list:
 
     # No args
     if len(args) < 2:
-        print("ERROR : Did not provide path to historical returns (csv file)")
+        print(BAD_INPUT_SRT)
         print(CMD_FORMAT)
         exit(1)
 
@@ -148,13 +150,33 @@ def read_excel_parameters(file_path: str, sheet_name: str):
     return risk_free_rate, available_rate,  periodicity
 
 
-def read_excel_user_portfolios(file_path: str, sheet_name: str) -> list:
+def read_excel_user_portfolios(file_path: str, sheet_name: str, corr_matrix: object, asset_classes: list) -> list:
     """
     Returns a list of user defined Portfolio objects from the input Excel file
     """
-    user_portfolios = []
+    NAME  = 'Portfolio Name'
+    COLOR = 'Color'
 
-    return user_portfolios
+    try:
+        df = pd.read_excel(file_path, sheet_name=sheet_name, header=0)
+    except PermissionError:
+        print("ERROR : Could not read Excel file.\nThis could be because the file is open. Please close it before running the program.")
+        exit(1)
+
+    portfolios = []
+    for _, row in df.iterrows():
+        name = row[NAME]
+        color = row[COLOR]
+        composition = row.drop([NAME, COLOR])*100
+        composition = composition.to_dict()
+
+        composition = obj.convert_tickers_to_AssetClass_obj(composition, asset_classes)
+
+        portfolio = obj.Portfolio(name, composition, corr_matrix)
+        portfolio.set_color(color)
+        portfolios.append(portfolio)
+    
+    return portfolios
 
 
 def read_excel_input(file_path : str, file_type : str):
@@ -177,9 +199,6 @@ def read_excel_input(file_path : str, file_type : str):
     PARAMETERS_SHEET    = "Parameters"
     PORTFOLIOS_SHEET    = "Portfolios"
 
-    #arguments 
-    file_type = "excel"
-    file_path = "input/input.xlsx"
 
     asset_class_list = []
 
@@ -209,9 +228,11 @@ def read_excel_input(file_path : str, file_type : str):
 
     # Get corr_matrix
     corr_matrix = df.T.corr()
-    corr_matrix
+    
+    # Get user portfolios
+    user_portfolios = read_excel_user_portfolios(file_path, PORTFOLIOS_SHEET, corr_matrix, asset_class_list)
 
-    return asset_class_list, corr_matrix, rf, available_rate, period, None
+    return asset_class_list, corr_matrix, rf, available_rate, period, user_portfolios
 
 
 def get_random_weights(n):
@@ -291,7 +312,7 @@ def compute_sharpe(df: pd.DataFrame, rf: float) -> pd.DataFrame:
 
 def main():
     # Prepare TimeTracker
-    tt = TagHeuer.TimeTracker()
+    tt = TimeTracker.TimeTracker()
 
     func_name = "Read command line arguments"
     tt.start(func_name)
@@ -307,6 +328,9 @@ def main():
     # Create AssetClass objects from .csv file
     asset_classes, corr_matrix, risk_free_rate, available_rate, period, user_portfolios = read_excel_input(returns_file, file_type)
     tt.end(func_name)
+
+    for p in user_portfolios:
+        print(p)
 
     func_name = "create_portfolios"
     tt.start(func_name)
@@ -328,6 +352,7 @@ def main():
     tt.start(func_name)
     eff_frontier = gr.get_scatter_plot(portfolios_df, title=f"Efficient Frontier based on {period.lower()} returns : {SAMPLE_SIZE} portfolios")
     eff_frontier, optimal_portfolio = gr.add_CAL(eff_frontier, portfolios_df, risk_free_rate)
+    eff_frontier = gr.add_user_portfolios(eff_frontier, user_portfolios)
     eff_frontier.show()
     tt.end(func_name)
 

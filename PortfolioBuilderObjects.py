@@ -74,6 +74,27 @@ def period_to_annual_sd(sd: float, period: str) -> float:
     return sd * m**0.5
 
 
+def convert_tickers_to_AssetClass_obj(composition: dict, asset_classes: list) -> dict:
+    """
+    Given 
+    - A composition dict with strings as keys (tickers)
+    - A list of all AssetClass objects
+    Outputs a composition dict with AssetClass objects as keys
+    """
+    # create dict {"ticker" : AssetClass}
+    ticker_to_obj = {}
+    for asset_obj in asset_classes:
+        ticker_to_obj[asset_obj.name] = asset_obj
+
+    new_dict = {}
+    # create new dict with obj as keys
+    for ticker, weight in composition.items():
+        key = ticker_to_obj[ticker]
+        new_dict[key] = weight
+
+    return new_dict
+
+
 class AssetClass:
     """
     Risky asset classes with:
