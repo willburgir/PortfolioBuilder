@@ -44,6 +44,7 @@ These drafts (will be improved eventually) can also help you understand:
 **All images shown on this page are drafts and will be replaced with better ones soon.**
 
 **TODO:** 
+- Show % as $ for composition implementation
 - Let users highlight any portfolio on the curve (from input)
 - Extend Capital Allocation Line beyond 100% into optimal portfolio (for investors with leverage)
 - Output a PDF report
